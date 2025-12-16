@@ -3,707 +3,317 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Study Buddy</title>
+  <title>เพื่อนติวคู่ใจ</title>
+  <script src="/_sdk/data_sdk.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-        body {
-            box-sizing: border-box;
-        }
-        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Prompt', sans-serif;
-        }
-        
-        .pin-input {
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
-            text-align: center;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            margin: 0 5px;
-        }
-        
-        .pin-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-        
-        .btn-primary {
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-        }
-        
-        .card {
-            transition: all 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .image-preview {
-            position: relative;
-            display: inline-block;
-            margin: 10px;
-        }
-        
-        .image-preview img {
-            max-width: 150px;
-            max-height: 150px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-        
-        .remove-image {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 14px;
-        }
-    </style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    .toast.error {
+      background: #ef4444;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .lesson-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .lesson-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    
+    .post-card {
+      border-left: 4px solid;
+      transition: all 0.2s;
+    }
+    
+    .post-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .image-preview {
+      position: relative;
+      display: inline-block;
+      margin: 8px;
+    }
+    
+    .image-preview img {
+      max-width: 150px;
+      max-height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    
+    .image-remove {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+  </style>
   <style>@view-transition { navigation: auto; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full">
   <div id="app" class="w-full h-full"></div>
   <script>
-        const defaultConfig = {
-            site_title: "Study Buddy",
-            login_title: "เข้าสู่ระบบ Study Buddy",
-            grade_title: "เลือกระดับชั้นของคุณ",
-            subject_title: "เลือกวิชาที่ต้องการเรียน",
-            lesson_title: "บทเรียนทั้งหมด",
-            background_color: "#f0f9ff",
-            card_color: "#ffffff",
-            text_color: "#1e293b",
-            primary_button_color: "#3b82f6",
-            secondary_button_color: "#10b981",
-            font_family: "Prompt",
-            font_size: 16
+    const defaultConfig = {
+      site_title: "เพื่อนติวคู่ใจ",
+      welcome_message: "ยินดีต้อนรับสู่เพื่อนติวคู่ใจ",
+      primary_color: "#3b82f6",
+      secondary_color: "#f3f4f6",
+      text_color: "#1f2937",
+      card_color: "#ffffff",
+      accent_color: "#10b981",
+      font_family: "Arial",
+      font_size: 16
+    };
+    
+    let appState = {
+      currentView: 'login',
+      currentUser: null,
+      selectedGrade: null,
+      selectedSubject: null,
+      selectedLesson: null,
+      editingPostId: null,
+      imageUrls: []
+    };
+    
+    let allPosts = [];
+    let allUsers = [];
+    
+    const gradeSubjects = {
+      'ม.1': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
+      'ม.2': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
+      'ม.3': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
+      'ม.4': ['ฟิสิกส์', 'เคมี', 'ชีววิทยา', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
+      'ม.5': ['ฟิสิกส์', 'เคมี', 'ชีววิทยา', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
+      'ม.6': ['ฟิสิกส์', 'เคมี', 'ชีววิทยา', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม']
+    };
+    
+    const subjectLessons = {
+      'วิทยาศาสตร์': ['บทที่ 1: วิธีการทางวิทยาศาสตร์', 'บทที่ 2: สสารและสมบัติ', 'บทที่ 3: การเปลี่ยนแปลงของสสาร', 'บทที่ 4: แรงและการเคลื่อนที่', 'บทที่ 5: พลังงานและการอนุรักษ์'],
+      'คณิตศาสตร์': ['บทที่ 1: จำนวนเต็ม', 'บทที่ 2: เศษส่วน', 'บทที่ 3: ทศนิยม', 'บทที่ 4: เรขาคณิต', 'บทที่ 5: สถิติเบื้องต้น'],
+      'ภาษาไทย': ['บทที่ 1: การอ่านและการเขียน', 'บทที่ 2: วรรณคดีไทย', 'บทที่ 3: หลักภาษา', 'บทที่ 4: การเขียนเรียงความ', 'บทที่ 5: วรรณกรรม'],
+      'ภาษาอังกฤษ': ['Lesson 1: Greetings', 'Lesson 2: Present Tense', 'Lesson 3: Past Tense', 'Lesson 4: Reading Comprehension', 'Lesson 5: Writing Skills'],
+      'สังคม': ['บทที่ 1: ประวัติศาสตร์ไทย', 'บทที่ 2: ภูมิศาสตร์', 'บทที่ 3: เศรษฐศาสตร์', 'บทที่ 4: สังคมและวัฒนธรรม', 'บทที่ 5: การเมืองการปกครอง'],
+      'ฟิสิกส์': ['บทที่ 1: กลศาสตร์', 'บทที่ 2: พลังงานและงาน', 'บทที่ 3: คลื่นและเสียง', 'บทที่ 4: ไฟฟ้า', 'บทที่ 5: แสงและทัศนศาสตร์'],
+      'เคมี': ['บทที่ 1: โครงสร้างอะตอม', 'บทที่ 2: พันธะเคมี', 'บทที่ 3: สารละลาย', 'บทที่ 4: ปฏิกิริยาเคมี', 'บทที่ 5: เคมีอินทรีย์'],
+      'ชีววิทยา': ['บทที่ 1: เซลล์และการทำงาน', 'บทที่ 2: พันธุศาสตร์', 'บทที่ 3: วิวัฒนาการ', 'บทที่ 4: นิเวศวิทยา', 'บทที่ 5: ระบบในร่างกาย']
+    };
+    
+    function showToast(message, isError = false) {
+      const toast = document.createElement('div');
+      toast.className = `toast ${isError ? 'error' : ''}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+    
+    async function handleRegister(e) {
+      e.preventDefault();
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value;
+      
+      if (!username || !password) {
+        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', true);
+        return;
+      }
+      
+      if (password.length < 4) {
+        showToast('รหัสผ่านต้องมีอย่างน้อย 4 หลัก', true);
+        return;
+      }
+      
+      const existingUser = allUsers.find(u => u.username === username);
+      if (existingUser) {
+        showToast('ชื่อผู้ใช้นี้มีอยู่แล้ว', true);
+        return;
+      }
+      
+      const loadingBtn = e.target.querySelector('button[type="submit"]');
+      loadingBtn.disabled = true;
+      loadingBtn.textContent = 'กำลังสมัคร...';
+      
+      const result = await window.dataSdk.create({
+        id: `user_${Date.now()}_${Math.random()}`,
+        username: username,
+        password: password,
+        post_id: '',
+        author: '',
+        grade: '',
+        subject: '',
+        lesson: '',
+        content: '',
+        image_urls: '',
+        created_at: new Date().toISOString(),
+        updated_at: ''
+      });
+      
+      loadingBtn.disabled = false;
+      loadingBtn.textContent = 'สมัครสมาชิก';
+      
+      if (result.isOk) {
+        showToast('สมัครสมาชิกสำเร็จ');
+        document.getElementById('reg-username').value = '';
+        document.getElementById('reg-password').value = '';
+      } else {
+        showToast('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง', true);
+      }
+    }
+    
+    function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+      
+      if (!username || !password) {
+        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', true);
+        return;
+      }
+      
+      const user = allUsers.find(u => u.username === username && u.password === password);
+      if (user) {
+        appState.currentUser = username;
+        appState.currentView = 'grades';
+        render();
+        showToast('เข้าสู่ระบบสำเร็จ');
+      } else {
+        showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', true);
+      }
+    }
+    
+    function selectGrade(grade) {
+      appState.selectedGrade = grade;
+      appState.currentView = 'subjects';
+      render();
+    }
+    
+    function selectSubject(subject) {
+      appState.selectedSubject = subject;
+      appState.currentView = 'lessons';
+      render();
+    }
+    
+    function selectLesson(lesson) {
+      appState.selectedLesson = lesson;
+      appState.currentView = 'posts';
+      appState.editingPostId = null;
+      appState.imageUrls = [];
+      render();
+    }
+    
+    function handleImageInput(e) {
+      const input = e.target;
+      const files = Array.from(input.files);
+      
+      if (files.length > 5) {
+        showToast('สามารถแนบรูปภาพได้สูงสุด 5 รูป', true);
+        input.value = '';
+        return;
+      }
+      
+      files.forEach(file => {
+        if (appState.imageUrls.length >= 5) {
+          showToast('สามารถแนบรูปภาพได้สูงสุด 5 รูป', true);
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          appState.imageUrls.push(event.target.result);
+          renderImagePreviews();
         };
-
-        let currentUser = null;
-        let currentView = 'login';
-        let currentGrade = null;
-        let currentSubject = null;
-        let currentLesson = null;
-        let allPosts = [];
-        let editingPost = null;
-        let tempImages = [];
-
-        const gradeSubjects = {
-            'ม.1': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
-            'ม.2': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
-            'ม.3': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
-            'ม.4': ['ฟิสิกส์', 'เคมี', 'ชีววิทยา', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
-            'ม.5': ['ฟิสิกส์', 'เคมี', 'ชีววิทยา', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
-            'ม.6': ['ฟิสิกส์', 'เคมี', 'ชีววิทยา', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม']
-        };
-
-        const subjectLessons = {
-            'วิทยาศาสตร์': ['บทที่ 1: ระบบสุริยะ', 'บทที่ 2: สิ่งมีชีวิตกับสิ่งแวดล้อม', 'บทที่ 3: สารและการเปลี่ยนแปลงสถานะ', 'บทที่ 4: แรงและการเคลื่อนที่', 'บทที่ 5: พลังงาน'],
-            'คณิตศาสตร์': ['บทที่ 1: จำนวนเต็ม', 'บทที่ 2: เศษส่วน', 'บทที่ 3: ทศนิยม', 'บทที่ 4: อัตราส่วนและร้อยละ', 'บทที่ 5: สมการเชิงเส้น'],
-            'ภาษาไทย': ['บทที่ 1: การอ่านจับใจความ', 'บทที่ 2: การเขียนเรียงความ', 'บทที่ 3: วรรณคดีไทย', 'บทที่ 4: ไวยากรณ์', 'บทที่ 5: สุภาษิตและคำพังเพย'],
-            'ภาษาอังกฤษ': ['Chapter 1: Greetings', 'Chapter 2: Present Tense', 'Chapter 3: Past Tense', 'Chapter 4: Vocabulary Building', 'Chapter 5: Reading Comprehension'],
-            'สังคม': ['บทที่ 1: ประวัติศาสตร์ไทย', 'บทที่ 2: ภูมิศาสตร์', 'บทที่ 3: เศรษฐศาสตร์', 'บทที่ 4: สังคมวิทยา', 'บทที่ 5: การเมืองการปกครอง'],
-            'ฟิสิกส์': ['บทที่ 1: กลศาสตร์', 'บทที่ 2: คลื่นและเสียง', 'บทที่ 3: ไฟฟ้าสถิต', 'บทที่ 4: แม่เหล็กไฟฟ้า', 'บทที่ 5: แสงและทัศนศาสตร์'],
-            'เคมี': ['บทที่ 1: ตารางธาตุ', 'บทที่ 2: พันธะเคมี', 'บทที่ 3: ปฏิกิริยาเคมี', 'บทที่ 4: สารละลาย', 'บทที่ 5: กรด-เบส'],
-            'ชีววิทยา': ['บทที่ 1: เซลล์', 'บทที่ 2: การแบ่งเซลล์', 'บทที่ 3: พันธุกรรม', 'บทที่ 4: วิวัฒนาการ', 'บทที่ 5: ระบบต่างๆในร่างกาย']
-        };
-
-        function loadPostsFromLocalStorage() {
-            const stored = localStorage.getItem('studyBuddyPosts');
-            return stored ? JSON.parse(stored) : [];
-        }
-
-        function savePostsToLocalStorage(posts) {
-            localStorage.setItem('studyBuddyPosts', JSON.stringify(posts));
-        }
-
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        function init() {
-            allPosts = loadPostsFromLocalStorage();
-            render();
-        }
-
-        async function onConfigChange(config) {
-            const baseSize = config.font_size || defaultConfig.font_size;
-            const customFont = config.font_family || defaultConfig.font_family;
-            const baseFontStack = 'sans-serif';
-            const bgColor = config.background_color || defaultConfig.background_color;
-            const cardColor = config.card_color || defaultConfig.card_color;
-            const textColor = config.text_color || defaultConfig.text_color;
-            const primaryColor = config.primary_button_color || defaultConfig.primary_button_color;
-            const secondaryColor = config.secondary_button_color || defaultConfig.secondary_button_color;
-
-            document.body.style.background = bgColor;
-            document.body.style.color = textColor;
-            document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
-            document.body.style.fontSize = `${baseSize}px`;
-
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                card.style.background = cardColor;
-            });
-
-            const primaryButtons = document.querySelectorAll('.btn-primary');
-            primaryButtons.forEach(btn => {
-                btn.style.background = primaryColor;
-            });
-
-            const secondaryButtons = document.querySelectorAll('.btn-secondary');
-            secondaryButtons.forEach(btn => {
-                btn.style.background = secondaryColor;
-            });
-
-            const titles = document.querySelectorAll('.page-title');
-            titles.forEach(title => {
-                title.style.fontSize = `${baseSize * 2}px`;
-                title.style.color = textColor;
-            });
-
-            const subtitles = document.querySelectorAll('.subtitle');
-            subtitles.forEach(subtitle => {
-                subtitle.style.fontSize = `${baseSize * 1.25}px`;
-                subtitle.style.color = textColor;
-            });
-
-            const bodyText = document.querySelectorAll('.body-text');
-            bodyText.forEach(text => {
-                text.style.fontSize = `${baseSize}px`;
-                text.style.color = textColor;
-            });
-
-            render();
-        }
-
-        function handlePinInput(index, event) {
-            const inputs = document.querySelectorAll('.pin-input');
-            const value = event.target.value;
-
-            if (value.length === 1 && index < 3) {
-                inputs[index + 1].focus();
-            }
-
-            if (event.key === 'Backspace' && value.length === 0 && index > 0) {
-                inputs[index - 1].focus();
-            }
-        }
-
-        function handleLogin() {
-            const inputs = document.querySelectorAll('.pin-input');
-            const pin = Array.from(inputs).map(input => input.value).join('');
-            
-            if (pin.length === 4) {
-                currentUser = pin;
-                currentView = 'grade-selection';
-                render();
-            } else {
-                showMessage('กรุณากรอกรหัส PIN 4 หลัก', 'error');
-            }
-        }
-
-        function selectGrade(grade) {
-            currentGrade = grade;
-            currentView = 'subject-selection';
-            render();
-        }
-
-        function selectSubject(subject) {
-            currentSubject = subject;
-            currentView = 'lesson-list';
-            render();
-        }
-
-        function selectLesson(lesson) {
-            currentLesson = lesson;
-            currentView = 'lesson-detail';
-            renderLessonDetail();
-        }
-
-        function goBack() {
-            if (currentView === 'lesson-detail') {
-                currentView = 'lesson-list';
-                currentLesson = null;
-                editingPost = null;
-                tempImages = [];
-            } else if (currentView === 'lesson-list') {
-                currentView = 'subject-selection';
-                currentSubject = null;
-            } else if (currentView === 'subject-selection') {
-                currentView = 'grade-selection';
-                currentGrade = null;
-            } else if (currentView === 'grade-selection') {
-                currentView = 'login';
-                currentUser = null;
-            }
-            render();
-        }
-
-        function handleImageUpload(event) {
-            const files = event.target.files;
-            const imagePromises = [];
-
-            for (let file of files) {
-                if (file.type.startsWith('image/')) {
-                    imagePromises.push(
-                        new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => resolve(e.target.result);
-                            reader.readAsDataURL(file);
-                        })
-                    );
-                }
-            }
-
-            Promise.all(imagePromises).then(images => {
-                tempImages = [...tempImages, ...images];
-                renderImagePreviews();
-            });
-        }
-
-        function removeImage(index) {
-            tempImages.splice(index, 1);
-            renderImagePreviews();
-        }
-
-        function renderImagePreviews() {
-            const container = document.getElementById('image-previews');
-            if (!container) return;
-
-            container.innerHTML = tempImages.map((img, index) => `
-                <div class="image-preview">
-                    <img src="${img}" alt="Preview ${index + 1}">
-                    <div class="remove-image" onclick="removeImage(${index})">×</div>
-                </div>
-            `).join('');
-        }
-
-        function submitPost() {
-            const content = document.getElementById('post-content').value.trim();
-            
-            if (!content) {
-                showMessage('กรุณาใส่เนื้อหา', 'error');
-                return;
-            }
-
-            const postData = {
-                id: editingPost ? editingPost.id : generateId(),
-                user_pin: currentUser,
-                post_content: content,
-                post_images: JSON.stringify(tempImages),
-                grade_level: currentGrade,
-                subject: currentSubject,
-                lesson: currentLesson,
-                created_at: editingPost ? editingPost.created_at : new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-
-            if (editingPost) {
-                const index = allPosts.findIndex(p => p.id === editingPost.id);
-                if (index !== -1) {
-                    allPosts[index] = postData;
-                    savePostsToLocalStorage(allPosts);
-                    showMessage('แก้ไขโพสต์สำเร็จ', 'success');
-                    editingPost = null;
-                }
-            } else {
-                allPosts.push(postData);
-                savePostsToLocalStorage(allPosts);
-                showMessage('เพิ่มโพสต์สำเร็จ', 'success');
-            }
-
-            document.getElementById('post-content').value = '';
-            tempImages = [];
-            renderImagePreviews();
-            renderLessonDetail();
-        }
-
-        function startEditPost(post) {
-            editingPost = post;
-            document.getElementById('post-content').value = post.post_content;
-            tempImages = JSON.parse(post.post_images || '[]');
-            renderImagePreviews();
-            document.getElementById('post-content').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function cancelEdit() {
-            editingPost = null;
-            document.getElementById('post-content').value = '';
-            tempImages = [];
-            renderImagePreviews();
-        }
-
-        function deletePost(post) {
-            allPosts = allPosts.filter(p => p.id !== post.id);
-            savePostsToLocalStorage(allPosts);
-            showMessage('ลบโพสต์สำเร็จ', 'success');
-            renderLessonDetail();
-        }
-
-        function showMessage(message, type) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white z-50`;
-            messageDiv.textContent = message;
-            document.body.appendChild(messageDiv);
-            
-            setTimeout(() => {
-                messageDiv.remove();
-            }, 3000);
-        }
-
-        function renderLogin() {
-            const config = window.elementSdk?.config || defaultConfig;
-            const baseSize = config.font_size || defaultConfig.font_size;
-            const bgColor = config.background_color || defaultConfig.background_color;
-            const cardColor = config.card_color || defaultConfig.card_color;
-            const textColor = config.text_color || defaultConfig.text_color;
-            const primaryColor = config.primary_button_color || defaultConfig.primary_button_color;
-            const siteTitle = config.site_title || defaultConfig.site_title;
-            const loginTitle = config.login_title || defaultConfig.login_title;
-
-            return `
-                <div class="min-h-full flex items-center justify-center p-4" style="background: ${bgColor};">
-                    <div class="card max-w-md w-full p-8 rounded-2xl shadow-xl" style="background: ${cardColor};">
-                        <div class="text-center mb-8">
-                            <h1 class="page-title font-bold mb-2" style="font-size: ${baseSize * 2}px; color: ${textColor};">${siteTitle}</h1>
-                            <p class="subtitle" style="font-size: ${baseSize * 1.25}px; color: ${textColor};">${loginTitle}</p>
-                        </div>
-                        
-                        <div class="mb-6">
-                            <label class="block body-text mb-3 font-medium" style="font-size: ${baseSize}px; color: ${textColor};">กรุณากรอกรหัส PIN 4 หลัก</label>
-                            <div class="flex justify-center">
-                                <input type="password" maxlength="1" class="pin-input" onkeyup="handlePinInput(0, event)" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
-                                <input type="password" maxlength="1" class="pin-input" onkeyup="handlePinInput(1, event)" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
-                                <input type="password" maxlength="1" class="pin-input" onkeyup="handlePinInput(2, event)" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
-                                <input type="password" maxlength="1" class="pin-input" onkeyup="handlePinInput(3, event)" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
-                            </div>
-                        </div>
-                        
-                        <button onclick="handleLogin()" class="btn-primary w-full py-3 rounded-lg text-white font-semibold" style="background: ${primaryColor}; font-size: ${baseSize}px;">
-                            เข้าสู่ระบบ
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderGradeSelection() {
-            const config = window.elementSdk?.config || defaultConfig;
-            const baseSize = config.font_size || defaultConfig.font_size;
-            const bgColor = config.background_color || defaultConfig.background_color;
-            const cardColor = config.card_color || defaultConfig.card_color;
-            const textColor = config.text_color || defaultConfig.text_color;
-            const primaryColor = config.primary_button_color || defaultConfig.primary_button_color;
-            const gradeTitle = config.grade_title || defaultConfig.grade_title;
-
-            const grades = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'];
-
-            return `
-                <div class="min-h-full p-6" style="background: ${bgColor};">
-                    <div class="max-w-4xl mx-auto">
-                        <button onclick="goBack()" class="mb-6 px-4 py-2 rounded-lg text-white font-medium" style="background: ${primaryColor}; font-size: ${baseSize * 0.9}px;">
-                            ← ย้อนกลับ
-                        </button>
-                        
-                        <h1 class="page-title text-center font-bold mb-8" style="font-size: ${baseSize * 2}px; color: ${textColor};">${gradeTitle}</h1>
-                        
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            ${grades.map(grade => `
-                                <div onclick="selectGrade('${grade}')" class="card cursor-pointer p-6 rounded-xl text-center" style="background: ${cardColor};">
-                                    <div class="subtitle font-semibold" style="font-size: ${baseSize * 1.5}px; color: ${textColor};">${grade}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderSubjectSelection() {
-            const config = window.elementSdk?.config || defaultConfig;
-            const baseSize = config.font_size || defaultConfig.font_size;
-            const bgColor = config.background_color || defaultConfig.background_color;
-            const cardColor = config.card_color || defaultConfig.card_color;
-            const textColor = config.text_color || defaultConfig.text_color;
-            const primaryColor = config.primary_button_color || defaultConfig.primary_button_color;
-            const subjectTitle = config.subject_title || defaultConfig.subject_title;
-
-            const subjects = gradeSubjects[currentGrade];
-
-            return `
-                <div class="min-h-full p-6" style="background: ${bgColor};">
-                    <div class="max-w-4xl mx-auto">
-                        <button onclick="goBack()" class="mb-6 px-4 py-2 rounded-lg text-white font-medium" style="background: ${primaryColor}; font-size: ${baseSize * 0.9}px;">
-                            ← ย้อนกลับ
-                        </button>
-                        
-                        <h1 class="page-title text-center font-bold mb-2" style="font-size: ${baseSize * 2}px; color: ${textColor};">${subjectTitle}</h1>
-                        <p class="text-center subtitle mb-8" style="font-size: ${baseSize * 1.1}px; color: ${textColor};">ระดับชั้น ${currentGrade}</p>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            ${subjects.map(subject => `
-                                <div onclick="selectSubject('${subject}')" class="card cursor-pointer p-6 rounded-xl" style="background: ${cardColor};">
-                                    <div class="subtitle font-semibold" style="font-size: ${baseSize * 1.25}px; color: ${textColor};">${subject}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderLessonList() {
-            const config = window.elementSdk?.config || defaultConfig;
-            const baseSize = config.font_size || defaultConfig.font_size;
-            const bgColor = config.background_color || defaultConfig.background_color;
-            const cardColor = config.card_color || defaultConfig.card_color;
-            const textColor = config.text_color || defaultConfig.text_color;
-            const primaryColor = config.primary_button_color || defaultConfig.primary_button_color;
-            const lessonTitle = config.lesson_title || defaultConfig.lesson_title;
-
-            const lessons = subjectLessons[currentSubject];
-
-            return `
-                <div class="min-h-full p-6" style="background: ${bgColor};">
-                    <div class="max-w-4xl mx-auto">
-                        <button onclick="goBack()" class="mb-6 px-4 py-2 rounded-lg text-white font-medium" style="background: ${primaryColor}; font-size: ${baseSize * 0.9}px;">
-                            ← ย้อนกลับ
-                        </button>
-                        
-                        <h1 class="page-title text-center font-bold mb-2" style="font-size: ${baseSize * 2}px; color: ${textColor};">${lessonTitle}</h1>
-                        <p class="text-center subtitle mb-8" style="font-size: ${baseSize * 1.1}px; color: ${textColor};">${currentSubject} - ${currentGrade}</p>
-                        
-                        <div class="space-y-4">
-                            ${lessons.map(lesson => `
-                                <div onclick="selectLesson('${lesson}')" class="card cursor-pointer p-6 rounded-xl" style="background: ${cardColor};">
-                                    <div class="body-text font-medium" style="font-size: ${baseSize * 1.1}px; color: ${textColor};">${lesson}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderLessonDetail() {
-            const config = window.elementSdk?.config || defaultConfig;
-            const baseSize = config.font_size || defaultConfig.font_size;
-            const bgColor = config.background_color || defaultConfig.background_color;
-            const cardColor = config.card_color || defaultConfig.card_color;
-            const textColor = config.text_color || defaultConfig.text_color;
-            const primaryColor = config.primary_button_color || defaultConfig.primary_button_color;
-            const secondaryColor = config.secondary_button_color || defaultConfig.secondary_button_color;
-
-            const lessonPosts = allPosts.filter(post => 
-                post.grade_level === currentGrade &&
-                post.subject === currentSubject &&
-                post.lesson === currentLesson
-            );
-
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <div class="min-h-full p-6" style="background: ${bgColor};">
-                    <div class="max-w-4xl mx-auto">
-                        <button onclick="goBack()" class="mb-6 px-4 py-2 rounded-lg text-white font-medium" style="background: ${primaryColor}; font-size: ${baseSize * 0.9}px;">
-                            ← ย้อนกลับ
-                        </button>
-                        
-                        <h1 class="page-title text-center font-bold mb-2" style="font-size: ${baseSize * 2}px; color: ${textColor};">${currentLesson}</h1>
-                        <p class="text-center subtitle mb-8" style="font-size: ${baseSize * 1.1}px; color: ${textColor};">${currentSubject} - ${currentGrade}</p>
-                        
-                        <div class="card p-6 rounded-xl mb-6" style="background: ${cardColor};">
-                            <h2 class="subtitle font-semibold mb-4" style="font-size: ${baseSize * 1.25}px; color: ${textColor};">
-                                ${editingPost ? 'แก้ไขโพสต์' : 'เพิ่มเนื้อหา'}
-                            </h2>
-                            
-                            <textarea id="post-content" rows="4" placeholder="เขียนเนื้อหาของคุณที่นี่..." 
-                                class="w-full p-3 border-2 border-gray-300 rounded-lg mb-4 body-text" 
-                                style="font-size: ${baseSize}px;"></textarea>
-                            
-                            <div class="mb-4">
-                                <label class="btn-secondary inline-block px-4 py-2 rounded-lg text-white font-medium cursor-pointer" 
-                                    style="background: ${secondaryColor}; font-size: ${baseSize * 0.9}px;">
-                                    📎 แนบรูปภาพ
-                                    <input type="file" accept="image/*" multiple onchange="handleImageUpload(event)" class="hidden">
-                                </label>
-                            </div>
-                            
-                            <div id="image-previews" class="mb-4 flex flex-wrap"></div>
-                            
-                            <div class="flex gap-2">
-                                <button onclick="submitPost()" class="btn-primary px-6 py-2 rounded-lg text-white font-medium" 
-                                    style="background: ${primaryColor}; font-size: ${baseSize}px;">
-                                    ${editingPost ? 'บันทึกการแก้ไข' : 'โพสต์'}
-                                </button>
-                                ${editingPost ? `
-                                    <button onclick="cancelEdit()" class="px-6 py-2 rounded-lg font-medium border-2" 
-                                        style="border-color: ${primaryColor}; color: ${primaryColor}; font-size: ${baseSize}px;">
-                                        ยกเลิก
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            ${lessonPosts.length === 0 ? `
-                                <div class="card p-8 rounded-xl text-center" style="background: ${cardColor};">
-                                    <p class="body-text" style="font-size: ${baseSize}px; color: ${textColor};">ยังไม่มีเนื้อหาในบทเรียนนี้</p>
-                                </div>
-                            ` : lessonPosts.map(post => {
-                                const images = JSON.parse(post.post_images || '[]');
-                                const isOwner = post.user_pin === currentUser;
-                                const date = new Date(post.created_at);
-                                
-                                return `
-                                    <div class="card p-6 rounded-xl" style="background: ${cardColor};">
-                                        <div class="flex justify-between items-start mb-4">
-                                            <div class="body-text" style="font-size: ${baseSize * 0.85}px; color: ${textColor};">
-                                                ผู้ใช้: ****${post.user_pin.slice(-2)} | ${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}
-                                            </div>
-                                            ${isOwner ? `
-                                                <div class="flex gap-2">
-                                                    <button onclick='startEditPost(${JSON.stringify(post).replace(/'/g, "\\'")})'
-                                                        class="px-3 py-1 rounded text-white font-medium" 
-                                                        style="background: ${secondaryColor}; font-size: ${baseSize * 0.85}px;">
-                                                        แก้ไข
-                                                    </button>
-                                                    <button onclick='deletePost(${JSON.stringify(post).replace(/'/g, "\\'")})' 
-                                                        class="px-3 py-1 rounded text-white font-medium bg-red-500" 
-                                                        style="font-size: ${baseSize * 0.85}px;">
-                                                        ลบ
-                                                    </button>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                        
-                                        <p class="body-text mb-4 whitespace-pre-wrap" style="font-size: ${baseSize}px; color: ${textColor};">${post.post_content}</p>
-                                        
-                                        ${images.length > 0 ? `
-                                            <div class="flex flex-wrap gap-2">
-                                                ${images.map(img => `
-                                                    <img src="${img}" alt="Post image" class="rounded-lg" style="max-width: 200px; max-height: 200px; object-fit: cover;">
-                                                `).join('')}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            renderImagePreviews();
-        }
-
-        function render() {
-            const app = document.getElementById('app');
-            
-            let content = '';
-            switch(currentView) {
-                case 'login':
-                    content = renderLogin();
-                    break;
-                case 'grade-selection':
-                    content = renderGradeSelection();
-                    break;
-                case 'subject-selection':
-                    content = renderSubjectSelection();
-                    break;
-                case 'lesson-list':
-                    content = renderLessonList();
-                    break;
-                case 'lesson-detail':
-                    renderLessonDetail();
-                    return;
-            }
-            
-            app.innerHTML = content;
-        }
-
-        if (window.elementSdk) {
-            window.elementSdk.init({
-                defaultConfig,
-                onConfigChange,
-                mapToCapabilities: (config) => ({
-                    recolorables: [
-                        {
-                            get: () => config.background_color || defaultConfig.background_color,
-                            set: (value) => {
-                                window.elementSdk.setConfig({ background_color: value });
-                            }
-                        },
-                        {
-                            get: () => config.card_color || defaultConfig.card_color,
-                            set: (value) => {
-                                window.elementSdk.setConfig({ card_color: value });
-                            }
-                        },
-                        {
-                            get: () => config.text_color || defaultConfig.text_color,
-                            set: (value) => {
-                                window.elementSdk.setConfig({ text_color: value });
-                            }
-                        },
-                        {
-                            get: () => config.primary_button_color || defaultConfig.primary_button_color,
-                            set: (value) => {
-                                window.elementSdk.setConfig({ primary_button_color: value });
-                            }
-                        },
-                        {
-                            get: () => config.secondary_button_color || defaultConfig.secondary_button_color,
-                            set: (value) => {
-                                window.elementSdk.setConfig({ secondary_button_color: value });
-                            }
-                        }
-                    ],
-                    borderables: [],
-                    fontEditable: {
-                        get: () => config.font_family || defaultConfig.font_family,
-                        set: (value) => {
-                            window.elementSdk.setConfig({ font_family: value });
-                        }
-                    },
-                    fontSizeable: {
-                        get: () => config.font_size || defaultConfig.font_size,
-                        set: (value) => {
-                            window.elementSdk.setConfig({ font_size: value });
-                        }
-                    }
-                }),
-                mapToEditPanelValues: (config) => new Map([
-                    ['site_title', config.site_title || defaultConfig.site_title],
-                    ['login_title', config.login_title || defaultConfig.login_title],
-                    ['grade_title', config.grade_title || defaultConfig.grade_title],
-                    ['subject_title', config.subject_title || defaultConfig.subject_title],
-                    ['lesson_title', config.lesson_title || defaultConfig.lesson_title]
-                ])
-            });
-        }
-
-        init();
-    </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9abbcafb3388f3fb',t:'MTc2NTM1OTc1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
+        reader.readAsDataURL(file);
+      });
+      
+      input.value = '';
+    }
+    
+    function removeImage(index) {
+      appState.imageUrls.splice(index, 1);
+      renderImagePreviews();
+    }
+    
+    function renderImagePreviews() {
+      const container = document.getElementById('image-previews');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      appState.imageUrls.forEach((url, index) => {
+        const preview = document.createElement('div');
+        preview.className = 'image-preview';
+        preview.innerHTML = `
+          <img src="${url}" alt="Preview ${index + 1}">
+          <div class="image-remove" onclick="removeImage(${index})">×</div>
+        `;
+        container.appendChild(preview);
+      });
+    }
+    
+    async function handlePostSubmit(e) {
+      e.preventDefault();
+      const content = document.getElementById('post-content').value.trim();
+      
+      if (!content && appState.imageUrls.length === 0) {
+        showToast('กรุณาเพิ่มเนื้อหาหรือรูปภาพ', true);
+        return;
+      }
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'กำลังบันทึก...';
+      
+      if (appState.editingPostId) {
+        const postToEdit = allPosts.find(p => p.post_id === appState.editingPostId);
+        if (postToEdit) {
+          postToEdit.content = content;
+          postToEdit.image_urls = appState.imageUrls.join('|||');
+          postToEdit.updated_at = new Date().toISOString();
+          
+          const result = await window.dataSdk.update(postToEdit);
+          
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'บันทึก';
+          
+          if (result.isOk) {
+            showToast('แก้ไขโพสต์สำเร็จ');
+            appState.editingPostId = null;
+            appState.imageUrls = [];
+            document.getElementById('post-content').value =
