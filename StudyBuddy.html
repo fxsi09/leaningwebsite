@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>เพื่อนติวคู่ใจ</title>
-  <script src="/_sdk/data_sdk.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -89,6 +88,7 @@
     }
   </style>
   <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full">
   <div id="app" class="w-full h-full"></div>
@@ -105,6 +105,25 @@
       font_size: 16
     };
     
+    // Local Storage Functions
+    function saveToLocalStorage(key, data) {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (e) {
+        console.error('Failed to save to localStorage', e);
+      }
+    }
+    
+    function loadFromLocalStorage(key, defaultValue = []) {
+      try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : defaultValue;
+      } catch (e) {
+        console.error('Failed to load from localStorage', e);
+        return defaultValue;
+      }
+    }
+    
     let appState = {
       currentView: 'login',
       currentUser: null,
@@ -115,11 +134,11 @@
       imageUrls: []
     };
     
-    let allPosts = [];
-    let allUsers = [];
+    let allPosts = loadFromLocalStorage('posts', []);
+    let allUsers = loadFromLocalStorage('users', []);
     
     const gradeSubjects = {
-      'ม.1': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
+      'ม.1': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอัง��ฤษ', 'สังคม'],
       'ม.2': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
       'ม.3': ['วิทยาศาสตร์', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
       'ม.4': ['ฟิสิกส์', 'เคมี', 'ชีววิทยา', 'คณิตศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคม'],
@@ -130,10 +149,10 @@
     const subjectLessons = {
       'วิทยาศาสตร์': ['บทที่ 1: วิธีการทางวิทยาศาสตร์', 'บทที่ 2: สสารและสมบัติ', 'บทที่ 3: การเปลี่ยนแปลงของสสาร', 'บทที่ 4: แรงและการเคลื่อนที่', 'บทที่ 5: พลังงานและการอนุรักษ์'],
       'คณิตศาสตร์': ['บทที่ 1: จำนวนเต็ม', 'บทที่ 2: เศษส่วน', 'บทที่ 3: ทศนิยม', 'บทที่ 4: เรขาคณิต', 'บทที่ 5: สถิติเบื้องต้น'],
-      'ภาษาไทย': ['บทที่ 1: การอ่านและการเขียน', 'บทที่ 2: วรรณคดีไทย', 'บทที่ 3: หลักภาษา', 'บทที่ 4: การเขียนเรียงความ', 'บทที่ 5: วรรณกรรม'],
+      'ภาษาไทย': ['บทที่ 1: การอ่านและการเขียน', 'บทที่ 2: วรรณคดีไทย', 'บทที่ 3: หลักภาษา', 'บทที่ 4: การเขียนเรียงความ', 'บทที่ 5: ว���รณกรรม'],
       'ภาษาอังกฤษ': ['Lesson 1: Greetings', 'Lesson 2: Present Tense', 'Lesson 3: Past Tense', 'Lesson 4: Reading Comprehension', 'Lesson 5: Writing Skills'],
       'สังคม': ['บทที่ 1: ประวัติศาสตร์ไทย', 'บทที่ 2: ภูมิศาสตร์', 'บทที่ 3: เศรษฐศาสตร์', 'บทที่ 4: สังคมและวัฒนธรรม', 'บทที่ 5: การเมืองการปกครอง'],
-      'ฟิสิกส์': ['บทที่ 1: กลศาสตร์', 'บทที่ 2: พลังงานและงาน', 'บทที่ 3: คลื่นและเสียง', 'บทที่ 4: ไฟฟ้า', 'บทที่ 5: แสงและทัศนศาสตร์'],
+      'ฟิสิกส์': ['บทที่ 1: กลศาสตร์', 'บทที่ 2: พลังงานและงาน', 'บทที่ 3: คลื่นและเสียง', 'บทที่ 4: ��ฟฟ้า', 'บทที่ 5: แสงและทัศนศาสตร์'],
       'เคมี': ['บทที่ 1: โครงสร้างอะตอม', 'บทที่ 2: พันธะเคมี', 'บทที่ 3: สารละลาย', 'บทที่ 4: ปฏิกิริยาเคมี', 'บทที่ 5: เคมีอินทรีย์'],
       'ชีววิทยา': ['บทที่ 1: เซลล์และการทำงาน', 'บทที่ 2: พันธุศาสตร์', 'บทที่ 3: วิวัฒนาการ', 'บทที่ 4: นิเวศวิทยา', 'บทที่ 5: ระบบในร่างกาย']
     };
@@ -146,7 +165,7 @@
       setTimeout(() => toast.remove(), 3000);
     }
     
-    async function handleRegister(e) {
+    function handleRegister(e) {
       e.preventDefault();
       const username = document.getElementById('reg-username').value.trim();
       const password = document.getElementById('reg-password').value;
@@ -167,35 +186,19 @@
         return;
       }
       
-      const loadingBtn = e.target.querySelector('button[type="submit"]');
-      loadingBtn.disabled = true;
-      loadingBtn.textContent = 'กำลังสมัคร...';
-      
-      const result = await window.dataSdk.create({
+      const newUser = {
         id: `user_${Date.now()}_${Math.random()}`,
         username: username,
         password: password,
-        post_id: '',
-        author: '',
-        grade: '',
-        subject: '',
-        lesson: '',
-        content: '',
-        image_urls: '',
-        created_at: new Date().toISOString(),
-        updated_at: ''
-      });
+        created_at: new Date().toISOString()
+      };
       
-      loadingBtn.disabled = false;
-      loadingBtn.textContent = 'สมัครสมาชิก';
+      allUsers.push(newUser);
+      saveToLocalStorage('users', allUsers);
       
-      if (result.isOk) {
-        showToast('สมัครสมาชิกสำเร็จ');
-        document.getElementById('reg-username').value = '';
-        document.getElementById('reg-password').value = '';
-      } else {
-        showToast('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง', true);
-      }
+      showToast('สมัครสมาชิกสำเร็จ');
+      document.getElementById('reg-username').value = '';
+      document.getElementById('reg-password').value = '';
     }
     
     function handleLogin(e) {
@@ -204,7 +207,7 @@
       const password = document.getElementById('login-password').value;
       
       if (!username || !password) {
-        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', true);
+        showToast('กรุณากรอกข้อมู���ให้ครบถ้วน', true);
         return;
       }
       
@@ -287,7 +290,7 @@
       });
     }
     
-    async function handlePostSubmit(e) {
+    function handlePostSubmit(e) {
       e.preventDefault();
       const content = document.getElementById('post-content').value.trim();
       
@@ -296,24 +299,454 @@
         return;
       }
       
-      const submitBtn = e.target.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'กำลังบันทึก...';
-      
       if (appState.editingPostId) {
-        const postToEdit = allPosts.find(p => p.post_id === appState.editingPostId);
-        if (postToEdit) {
-          postToEdit.content = content;
-          postToEdit.image_urls = appState.imageUrls.join('|||');
-          postToEdit.updated_at = new Date().toISOString();
+        const postIndex = allPosts.findIndex(p => p.post_id === appState.editingPostId);
+        if (postIndex !== -1) {
+          allPosts[postIndex].content = content;
+          allPosts[postIndex].image_urls = appState.imageUrls;
+          allPosts[postIndex].updated_at = new Date().toISOString();
           
-          const result = await window.dataSdk.update(postToEdit);
+          saveToLocalStorage('posts', allPosts);
           
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'บันทึก';
-          
-          if (result.isOk) {
-            showToast('แก้ไขโพสต์สำเร็จ');
-            appState.editingPostId = null;
-            appState.imageUrls = [];
-            document.getElementById('post-content').value =
+          showToast('แก้ไขโพสต์สำเร็จ');
+          appState.editingPostId = null;
+          appState.imageUrls = [];
+          document.getElementById('post-content').value = '';
+          render();
+        }
+      } else {
+        const newPost = {
+          post_id: `post_${Date.now()}_${Math.random()}`,
+          author: appState.currentUser,
+          grade: appState.selectedGrade,
+          subject: appState.selectedSubject,
+          lesson: appState.selectedLesson,
+          content: content,
+          image_urls: appState.imageUrls,
+          created_at: new Date().toISOString(),
+          updated_at: null
+        };
+        
+        allPosts.push(newPost);
+        saveToLocalStorage('posts', allPosts);
+        
+        showToast('เพิ่มโพสต์สำเร็จ');
+        appState.imageUrls = [];
+        document.getElementById('post-content').value = '';
+        render();
+      }
+    }
+    
+    function editPost(postId) {
+      const post = allPosts.find(p => p.post_id === postId);
+      if (!post) return;
+      
+      appState.editingPostId = postId;
+      appState.imageUrls = post.image_urls ? [...post.image_urls] : [];
+      
+      document.getElementById('post-content').value = post.content;
+      renderImagePreviews();
+      document.getElementById('post-content').focus();
+      
+      const cancelBtn = document.getElementById('cancel-edit-btn');
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
+    }
+    
+    function cancelEdit() {
+      appState.editingPostId = null;
+      appState.imageUrls = [];
+      document.getElementById('post-content').value = '';
+      renderImagePreviews();
+      
+      const cancelBtn = document.getElementById('cancel-edit-btn');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+    
+    function deletePost(postId) {
+      const deleteBtn = event.target;
+      const originalText = deleteBtn.textContent;
+      
+      if (deleteBtn.dataset.confirming === 'true') {
+        const postIndex = allPosts.findIndex(p => p.post_id === postId);
+        if (postIndex !== -1) {
+          allPosts.splice(postIndex, 1);
+          saveToLocalStorage('posts', allPosts);
+          showToast('ลบโพสต์สำเร็จ');
+          render();
+        }
+      } else {
+        deleteBtn.textContent = 'ยืนยันการลบ?';
+        deleteBtn.dataset.confirming = 'true';
+        setTimeout(() => {
+          deleteBtn.textContent = originalText;
+          deleteBtn.dataset.confirming = 'false';
+        }, 3000);
+      }
+    }
+    
+    function logout() {
+      appState = {
+        currentView: 'login',
+        currentUser: null,
+        selectedGrade: null,
+        selectedSubject: null,
+        selectedLesson: null,
+        editingPostId: null,
+        imageUrls: []
+      };
+      render();
+      showToast('ออกจากระบบสำเร็จ');
+    }
+    
+    function backToGrades() {
+      appState.selectedGrade = null;
+      appState.selectedSubject = null;
+      appState.selectedLesson = null;
+      appState.currentView = 'grades';
+      render();
+    }
+    
+    function backToSubjects() {
+      appState.selectedSubject = null;
+      appState.selectedLesson = null;
+      appState.currentView = 'subjects';
+      render();
+    }
+    
+    function backToLessons() {
+      appState.selectedLesson = null;
+      appState.currentView = 'lessons';
+      render();
+    }
+    
+    function togglePassword(inputId, eyeId) {
+      const input = document.getElementById(inputId);
+      const eye = document.getElementById(eyeId);
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        eye.textContent = '👁️';
+      }
+    }
+    
+    function render() {
+      const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+      const app = document.getElementById('app');
+      
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      const baseFontStack = 'Arial, sans-serif';
+      
+      document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.body.style.fontSize = `${baseSize}px`;
+      
+      if (appState.currentView === 'login') {
+        app.innerHTML = `
+          <div class="w-full h-full flex items-center justify-center" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <div class="w-full max-w-md p-8 rounded-lg shadow-lg" style="background-color: ${config.card_color || defaultConfig.card_color};">
+              <h1 class="text-center font-bold mb-2" style="font-size: ${baseSize * 2}px; color: ${config.text_color || defaultConfig.text_color};">${config.site_title || defaultConfig.site_title}</h1>
+              <p class="text-center mb-8" style="font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">${config.welcome_message || defaultConfig.welcome_message}</p>
+              
+              <div class="mb-8">
+                <h2 class="font-bold mb-4" style="font-size: ${baseSize * 1.3}px; color: ${config.text_color || defaultConfig.text_color};">เข้าสู่ระบบ</h2>
+                <form onsubmit="handleLogin(event)">
+                  <div class="mb-4">
+                    <label for="login-username" class="block mb-2" style="font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">ชื่อผู้ใช้</label>
+                    <input type="text" id="login-username" class="w-full px-4 py-2 border rounded-lg" style="font-size: ${baseSize}px; border-color: ${config.secondary_color || defaultConfig.secondary_color};" required>
+                  </div>
+                  <div class="mb-4">
+                    <label for="login-password" class="block mb-2" style="font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">รหัสผ่าน</label>
+                    <div style="position: relative;">
+                      <input type="password" id="login-password" class="w-full px-4 py-2 border rounded-lg" style="font-size: ${baseSize}px; border-color: ${config.secondary_color || defaultConfig.secondary_color}; padding-right: 45px;" required minlength="4">
+                      <button type="button" onclick="togglePassword('login-password', 'login-eye')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: ${baseSize * 1.2}px;">
+                        <span id="login-eye">👁️</span>
+                      </button>
+                    </div>
+                  </div>
+                  <button type="submit" class="w-full px-4 py-2 rounded-lg text-white font-bold" style="background-color: ${config.primary_color || defaultConfig.primary_color}; font-size: ${baseSize}px;">เข้าสู่ระบบ</button>
+                </form>
+              </div>
+              
+              <div class="pt-8 border-t" style="border-color: ${config.secondary_color || defaultConfig.secondary_color};">
+                <h2 class="font-bold mb-4" style="font-size: ${baseSize * 1.3}px; color: ${config.text_color || defaultConfig.text_color};">สมัครสมาชิก</h2>
+                <form onsubmit="handleRegister(event)">
+                  <div class="mb-4">
+                    <label for="reg-username" class="block mb-2" style="font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">ชื่อผู้ใช้</label>
+                    <input type="text" id="reg-username" class="w-full px-4 py-2 border rounded-lg" style="font-size: ${baseSize}px; border-color: ${config.secondary_color || defaultConfig.secondary_color};" required>
+                  </div>
+                  <div class="mb-4">
+                    <label for="reg-password" class="block mb-2" style="font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">รหัสผ่าน (อย่างน้อย 4 หลัก)</label>
+                    <div style="position: relative;">
+                      <input type="password" id="reg-password" class="w-full px-4 py-2 border rounded-lg" style="font-size: ${baseSize}px; border-color: ${config.secondary_color || defaultConfig.secondary_color}; padding-right: 45px;" required minlength="4">
+                      <button type="button" onclick="togglePassword('reg-password', 'reg-eye')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: ${baseSize * 1.2}px;">
+                        <span id="reg-eye">👁️</span>
+                      </button>
+                    </div>
+                  </div>
+                  <button type="submit" class="w-full px-4 py-2 rounded-lg text-white font-bold" style="background-color: ${config.accent_color || defaultConfig.accent_color}; font-size: ${baseSize}px;">สมัครสมาชิก</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (appState.currentView === 'grades') {
+        app.innerHTML = `
+          <div class="w-full h-full overflow-auto" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <div class="max-w-6xl mx-auto p-8">
+              <div class="flex justify-between items-center mb-8">
+                <h1 class="font-bold" style="font-size: ${baseSize * 2}px; color: ${config.text_color || defaultConfig.text_color};">เลือกระดับชั้น</h1>
+                <button onclick="logout()" class="px-6 py-2 rounded-lg text-white font-bold" style="background-color: #ef4444; font-size: ${baseSize * 0.9}px;">ออกจากระบบ</button>
+              </div>
+              <p class="mb-8" style="font-size: ${baseSize}px; color: ${config.text_color || defaultConfig.text_color};">สวัสดี ${appState.currentUser}!</p>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${Object.keys(gradeSubjects).map(grade => `
+                  <div class="lesson-card p-6 rounded-lg shadow-md cursor-pointer" style="background-color: ${config.card_color || defaultConfig.card_color}; border-left: 4px solid ${config.primary_color || defaultConfig.primary_color};" onclick="selectGrade('${grade}')">
+                    <h3 class="font-bold text-center" style="font-size: ${baseSize * 1.5}px; color: ${config.primary_color || defaultConfig.primary_color};">${grade}</h3>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (appState.currentView === 'subjects') {
+        app.innerHTML = `
+          <div class="w-full h-full overflow-auto" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <div class="max-w-6xl mx-auto p-8">
+              <div class="flex justify-between items-center mb-8">
+                <div>
+                  <button onclick="backToGrades()" class="px-4 py-2 rounded-lg mb-4" style="background-color: ${config.card_color || defaultConfig.card_color}; font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">← กลับ</button>
+                  <h1 class="font-bold" style="font-size: ${baseSize * 2}px; color: ${config.text_color || defaultConfig.text_color};">เลือกวิชา (${appState.selectedGrade})</h1>
+                </div>
+                <button onclick="logout()" class="px-6 py-2 rounded-lg text-white font-bold" style="background-color: #ef4444; font-size: ${baseSize * 0.9}px;">ออกจากระบบ</button>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${gradeSubjects[appState.selectedGrade].map(subject => `
+                  <div class="lesson-card p-6 rounded-lg shadow-md cursor-pointer" style="background-color: ${config.card_color || defaultConfig.card_color}; border-left: 4px solid ${config.accent_color || defaultConfig.accent_color};" onclick="selectSubject('${subject}')">
+                    <h3 class="font-bold text-center" style="font-size: ${baseSize * 1.3}px; color: ${config.text_color || defaultConfig.text_color};">${subject}</h3>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (appState.currentView === 'lessons') {
+        app.innerHTML = `
+          <div class="w-full h-full overflow-auto" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <div class="max-w-6xl mx-auto p-8">
+              <div class="flex justify-between items-center mb-8">
+                <div>
+                  <button onclick="backToSubjects()" class="px-4 py-2 rounded-lg mb-4" style="background-color: ${config.card_color || defaultConfig.card_color}; font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">← กลับ</button>
+                  <h1 class="font-bold" style="font-size: ${baseSize * 2}px; color: ${config.text_color || defaultConfig.text_color};">เลือกบทเรียน</h1>
+                  <p style="font-size: ${baseSize}px; color: ${config.text_color || defaultConfig.text_color};">${appState.selectedGrade} - ${appState.selectedSubject}</p>
+                </div>
+                <button onclick="logout()" class="px-6 py-2 rounded-lg text-white font-bold" style="background-color: #ef4444; font-size: ${baseSize * 0.9}px;">ออกจากระบบ</button>
+              </div>
+              
+              <div class="grid grid-cols-1 gap-4">
+                ${subjectLessons[appState.selectedSubject].map(lesson => `
+                  <div class="lesson-card p-6 rounded-lg shadow-md cursor-pointer" style="background-color: ${config.card_color || defaultConfig.card_color}; border-left: 4px solid ${config.primary_color || defaultConfig.primary_color};" onclick="selectLesson('${lesson}')">
+                    <h3 class="font-bold" style="font-size: ${baseSize * 1.2}px; color: ${config.text_color || defaultConfig.text_color};">${lesson}</h3>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (appState.currentView === 'posts') {
+        const lessonPosts = allPosts.filter(p => 
+          p.grade === appState.selectedGrade && 
+          p.subject === appState.selectedSubject && 
+          p.lesson === appState.selectedLesson
+        ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        app.innerHTML = `
+          <div class="w-full h-full overflow-auto" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <div class="max-w-4xl mx-auto p-8">
+              <div class="flex justify-between items-center mb-8">
+                <div>
+                  <button onclick="backToLessons()" class="px-4 py-2 rounded-lg mb-4" style="background-color: ${config.card_color || defaultConfig.card_color}; font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">← กลับ</button>
+                  <h1 class="font-bold" style="font-size: ${baseSize * 1.8}px; color: ${config.text_color || defaultConfig.text_color};">${appState.selectedLesson}</h1>
+                  <p style="font-size: ${baseSize * 0.85}px; color: ${config.text_color || defaultConfig.text_color};">${appState.selectedGrade} - ${appState.selectedSubject}</p>
+                </div>
+                <button onclick="logout()" class="px-6 py-2 rounded-lg text-white font-bold" style="background-color: #ef4444; font-size: ${baseSize * 0.9}px;">ออกจากระบบ</button>
+              </div>
+              
+              <div class="p-6 rounded-lg shadow-md mb-8" style="background-color: ${config.card_color || defaultConfig.card_color};">
+                <h2 class="font-bold mb-4" style="font-size: ${baseSize * 1.3}px; color: ${config.text_color || defaultConfig.text_color};">${appState.editingPostId ? 'แก้ไขโพสต์' : 'เพิ่มเนื้อหา'}</h2>
+                <form onsubmit="handlePostSubmit(event)">
+                  <div class="mb-4">
+                    <label for="post-content" class="block mb-2" style="font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">เนื้อหา</label>
+                    <textarea id="post-content" class="w-full px-4 py-2 border rounded-lg" rows="4" style="font-size: ${baseSize}px; border-color: ${config.secondary_color || defaultConfig.secondary_color};" placeholder="เขียนเนื้อหาที่ต้องการแชร์..."></textarea>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block mb-2" style="font-size: ${baseSize * 0.9}px; color: ${config.text_color || defaultConfig.text_color};">แนบรูปภาพ (สูงสุด 5 รูป)</label>
+                    <input type="file" accept="image/*" multiple onchange="handleImageInput(event)" class="w-full px-4 py-2 border rounded-lg" style="font-size: ${baseSize * 0.85}px; border-color: ${config.secondary_color || defaultConfig.secondary_color};">
+                    <div id="image-previews" class="mt-4"></div>
+                  </div>
+                  
+                  <div class="flex gap-4">
+                    <button type="submit" class="px-6 py-2 rounded-lg text-white font-bold" style="background-color: ${config.primary_color || defaultConfig.primary_color}; font-size: ${baseSize}px;">${appState.editingPostId ? 'บันทึก' : 'เพิ่มโพสต์'}</button>
+                    <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" class="px-6 py-2 rounded-lg font-bold" style="background-color: ${config.secondary_color || defaultConfig.secondary_color}; color: ${config.text_color || defaultConfig.text_color}; font-size: ${baseSize}px; display: none;">ยกเลิก</button>
+                  </div>
+                </form>
+              </div>
+              
+              <div>
+                <h2 class="font-bold mb-4" style="font-size: ${baseSize * 1.3}px; color: ${config.text_color || defaultConfig.text_color};">โพสต์ทั้งหมด (${lessonPosts.length})</h2>
+                ${lessonPosts.length === 0 ? 
+                  `<p class="text-center py-8" style="font-size: ${baseSize}px; color: ${config.text_color || defaultConfig.text_color};">ยังไม่มีโพสต์���นบทเรียนนี้</p>` :
+                  lessonPosts.map(post => {
+                    const images = post.image_urls || [];
+                    const isAuthor = post.author === appState.currentUser;
+                    const createdDate = new Date(post.created_at).toLocaleString('th-TH');
+                    const updatedDate = post.updated_at ? new Date(post.updated_at).toLocaleString('th-TH') : null;
+                    
+                    return `
+                      <div class="post-card p-6 rounded-lg shadow-md mb-4" style="background-color: ${config.card_color || defaultConfig.card_color}; border-color: ${config.accent_color || defaultConfig.accent_color};">
+                        <div class="flex justify-between items-start mb-4">
+                          <div>
+                            <p class="font-bold" style="font-size: ${baseSize * 1.1}px; color: ${config.text_color || defaultConfig.text_color};">${post.author}</p>
+                            <p style="font-size: ${baseSize * 0.75}px; color: ${config.text_color || defaultConfig.text_color};">${createdDate}${updatedDate ? ` (แก้ไข: ${updatedDate})` : ''}</p>
+                          </div>
+                          ${isAuthor ? `
+                            <div class="flex gap-2">
+                              <button onclick="editPost('${post.post_id}')" class="px-4 py-1 rounded text-white" style="background-color: ${config.primary_color || defaultConfig.primary_color}; font-size: ${baseSize * 0.85}px;">แก้ไข</button>
+                              <button onclick="deletePost('${post.post_id}')" data-confirming="false" class="px-4 py-1 rounded text-white" style="background-color: #ef4444; font-size: ${baseSize * 0.85}px;">ลบ</button>
+                            </div>
+                          ` : ''}
+                        </div>
+                        
+                        ${post.content ? `<p class="mb-4 whitespace-pre-wrap" style="font-size: ${baseSize}px; color: ${config.text_color || defaultConfig.text_color};">${post.content}</p>` : ''}
+                        
+                        ${images.length > 0 ? `
+                          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            ${images.map(url => `
+                              <img src="${url}" alt="รูปภาพโพสต์" class="w-full h-48 object-cover rounded-lg" onerror="this.src=''; this.alt='รูปภาพโหลดไม่สำเร็จ'; this.style.display='none';">
+                            `).join('')}
+                          </div>
+                        ` : ''}
+                      </div>
+                    `;
+                  }).join('')
+                }
+              </div>
+            </div>
+          </div>
+        `;
+        
+        renderImagePreviews();
+        
+        if (appState.editingPostId) {
+          const cancelBtn = document.getElementById('cancel-edit-btn');
+          if (cancelBtn) cancelBtn.style.display = 'inline-block';
+        }
+      }
+    }
+    
+    async function onConfigChange(config) {
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      const baseFontStack = 'Arial, sans-serif';
+      
+      document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.body.style.fontSize = `${baseSize}px`;
+      
+      render();
+    }
+    
+    function initApp() {
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              {
+                get: () => config.primary_color || defaultConfig.primary_color,
+                set: (value) => {
+                  config.primary_color = value;
+                  window.elementSdk.setConfig({ primary_color: value });
+                }
+              },
+              {
+                get: () => config.secondary_color || defaultConfig.secondary_color,
+                set: (value) => {
+                  config.secondary_color = value;
+                  window.elementSdk.setConfig({ secondary_color: value });
+                }
+              },
+              {
+                get: () => config.text_color || defaultConfig.text_color,
+                set: (value) => {
+                  config.text_color = value;
+                  window.elementSdk.setConfig({ text_color: value });
+                }
+              },
+              {
+                get: () => config.card_color || defaultConfig.card_color,
+                set: (value) => {
+                  config.card_color = value;
+                  window.elementSdk.setConfig({ card_color: value });
+                }
+              },
+              {
+                get: () => config.accent_color || defaultConfig.accent_color,
+                set: (value) => {
+                  config.accent_color = value;
+                  window.elementSdk.setConfig({ accent_color: value });
+                }
+              }
+            ],
+            borderables: [],
+            fontEditable: {
+              get: () => config.font_family || defaultConfig.font_family,
+              set: (value) => {
+                config.font_family = value;
+                window.elementSdk.setConfig({ font_family: value });
+              }
+            },
+            fontSizeable: {
+              get: () => config.font_size || defaultConfig.font_size,
+              set: (value) => {
+                config.font_size = value;
+                window.elementSdk.setConfig({ font_size: value });
+              }
+            }
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ['site_title', config.site_title || defaultConfig.site_title],
+            ['welcome_message', config.welcome_message || defaultConfig.welcome_message]
+          ])
+        });
+      }
+      
+      render();
+    }
+    
+    window.handleRegister = handleRegister;
+    window.handleLogin = handleLogin;
+    window.selectGrade = selectGrade;
+    window.selectSubject = selectSubject;
+    window.selectLesson = selectLesson;
+    window.handleImageInput = handleImageInput;
+    window.removeImage = removeImage;
+    window.handlePostSubmit = handlePostSubmit;
+    window.editPost = editPost;
+    window.cancelEdit = cancelEdit;
+    window.deletePost = deletePost;
+    window.logout = logout;
+    window.backToGrades = backToGrades;
+    window.backToSubjects = backToSubjects;
+    window.backToLessons = backToLessons;
+    window.togglePassword = togglePassword;
+    
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aef9a72e069ce6d',t:'MTc2NTkwMzAyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
